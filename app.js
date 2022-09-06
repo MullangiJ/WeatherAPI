@@ -1,52 +1,39 @@
-/*const express=require("express");
-const app=express();
-const port=3000;
-const https=require("https");
-const apikey="20c066dd406b1d59d91c596eb37a1e2e";
-const location="Mumbai";
-const api="https://api.openweathermap.org/data/2.5/weather?q=" +location+ "&appid=" + apikey;
-app.get("/",function(req,res){
-    https.get(api,function(response){
-        console.log(response.statusCode);
-        response.on("data",function(data){
-            const weatherData=JSON.parse(data);
-            const temperature=weatherData.main.temp;
-            //res.write("temperature is ${temperature}");
-            //console.log(weatherData);
-        });
-    });
-    res.send("server is running");
-});
-app.listen(port,function(){
-    console.log("server is running on port ${port}.");
-})*/
+const redis=require('redis');
 const request = require('request'); 
 const express = require('express');
 const app = express();
-
-var API_KEY = '20c066dd406b1d59d91c596eb37a1e2e'; 
-  
+//const redis = require("redis");
+const redisPort = 6379
+const client = redis.createClient(redisPort);
+client.on("error", (err) => {
+    console.log(err);
+});
+//const DEFAULT_EXPIRATION=3600;
+let API_KEY = '20c066dd406b1d59d91c596eb37a1e2e'; 
+  let stringify;
 app.get('/', (req, res)=> {
-
-    // Get city name passed in the form
-    var city = req.query.city;
-    //const https=require("https");
-    var request = require('request');
-   
+    let city = req.query.city;
     let url = "https://api.openweathermap.org/data/2.5/weather?q=" +city+ "&appid=" + API_KEY;
-    request({ url: url, json: true }, function (error, response) { 
+    //client.setex('/', 1440, JSON.stringify(data.results));
+    client.setex(city, 600,stringify(url));
+    request({ url:url, json: true },(error, response)=> { 
         if (error) 
-        { 
+        {  
+            const message="Unable to connect to Forecast API"
+            res.status(403).send(message);
             console.log('Unable to connect to Forecast API'); 
         } 
           else { 
             console.log('It is currently ' + response.body.main.temp+ ' degrees out.'
+            
         ); 
         console.log('The high today in '+city+' is ' + response.body.main.temp_max + ' with a low of '+ response.body.main.temp_min
             ); 
             console.log('Humidity today is ' + response.body.main.humidity
             ); 
-            res.send(response.body);
+            //client.setex('/',DEFAULT_EXPIRATION,JSON.stringify(city));
+            res.send({temp:response.body.main.temp});
+
         } 
     }) 
 } )

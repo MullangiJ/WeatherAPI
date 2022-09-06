@@ -9,7 +9,9 @@
   "author": "mjyothi@mjyothi-Latitude-3420",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.27.2",
     "express": "^4.18.1",
+    "redis": "^4.3.0",
     "request": "^2.88.2"
   }
 }
