@@ -2,42 +2,64 @@ const redis=require('redis');
 const request = require('request'); 
 const express = require('express');
 const app = express();
-//const redis = require("redis");
 const redisPort = 6379
-const client = redis.createClient(redisPort);
+const client = redis.createClient();
 client.on("error", (err) => {
     console.log(err);
 });
-//const DEFAULT_EXPIRATION=3600;
 let API_KEY = '20c066dd406b1d59d91c596eb37a1e2e'; 
   let stringify;
-app.get('/', (req, res)=> {
-    let city = req.query.city;
+  app.get('/', async(req,res)=> {
+    if(!req.query.city){
+        return res.send({"message": "Invalid request"});
+    }
+
+    var resp = await getdatafromRedis(req.query.city);
+    //console.log("value from redis", resp); process.exit(0);
+    if(resp != null){
+        res.status(200).send(resp)
+    }else{
+       getDatafromAPI(req.query.city, (err, resp) => {
+            if(err){
+                res.send(err);
+            }else{
+                res.status(200).send(resp);
+            }
+        });
+    }
+})
+  
+app.listen(3000,async ()=> {
+    await client.connect();
+    console.log('Weather app listening on port 3000!');
+});
+
+async function getdatafromRedis(city){
+    console.log("I m in redis function");
+    const result = await client.get(city);
+    if(result !=null){
+        return JSON.parse(result);
+    }else{
+        return null;
+    }
+     
+    }
+
+ function getDatafromAPI(city,callback){
+    console.log("i m in api function");
     let url = "https://api.openweathermap.org/data/2.5/weather?q=" +city+ "&appid=" + API_KEY;
-    //client.setex('/', 1440, JSON.stringify(data.results));
-    client.setex(city, 600,stringify(url));
     request({ url:url, json: true },(error, response)=> { 
         if (error) 
         {  
-            const message="Unable to connect to Forecast API"
-            res.status(403).send(message);
-            console.log('Unable to connect to Forecast API'); 
+            callback({"msg":"error"},null); 
         } 
           else { 
-            console.log('It is currently ' + response.body.main.temp+ ' degrees out.'
+            client.set(city,JSON.stringify({"temp":response.body.main.temp}));
+     //console.log('It is currently ' + response.body.main.temp+ ' degrees out.'  ); 
+      //  console.log('The high today in '+city+' is ' + response.body.main.temp_max + ' with a low of '+ response.body.main.temp_min ); 
+           // console.log('Humidity today is ' + response.body.main.humidity  ); 
+            callback (null, {"temp":response.body.main.temp});
             
-        ); 
-        console.log('The high today in '+city+' is ' + response.body.main.temp_max + ' with a low of '+ response.body.main.temp_min
-            ); 
-            console.log('Humidity today is ' + response.body.main.humidity
-            ); 
-            //client.setex('/',DEFAULT_EXPIRATION,JSON.stringify(city));
-            res.send({temp:response.body.main.temp});
-
         } 
-    }) 
-} )
-  
-app.listen(3000,()=> {
-    console.log('Weather app listening on port 3000!');
-});
+    });
+ }
