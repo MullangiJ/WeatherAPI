@@ -10,8 +10,13 @@ client.on("error", (err) => {
 let API_KEY = '20c066dd406b1d59d91c596eb37a1e2e'; 
   let stringify;
   app.get('/', async(req,res)=> {
+
     if(!req.query.city){
-        return res.send({"message": "Invalid request"});
+
+      const message = 'Invalid Request';
+
+        res.status(403).send(message);
+
     }
 
     var resp = await getdatafromRedis(req.query.city);
@@ -46,7 +51,6 @@ async function getdatafromRedis(city){
     }
 
  function getDatafromAPI(city,callback){
-    console.log("i m in api function");
     let url = "https://api.openweathermap.org/data/2.5/weather?q=" +city+ "&appid=" + API_KEY;
     request({ url:url, json: true },(error, response)=> { 
         if (error) 
@@ -55,10 +59,7 @@ async function getdatafromRedis(city){
         } 
           else { 
             client.set(city,JSON.stringify({"temp":response.body.main.temp}));
-     //console.log('It is currently ' + response.body.main.temp+ ' degrees out.'  ); 
-      //  console.log('The high today in '+city+' is ' + response.body.main.temp_max + ' with a low of '+ response.body.main.temp_min ); 
-           // console.log('Humidity today is ' + response.body.main.humidity  ); 
-            callback (null, {"temp":response.body.main.temp});
+        callback (null, {"temp":response.body.main.temp});
             
         } 
     });
