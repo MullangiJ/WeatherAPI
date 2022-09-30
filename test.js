@@ -2,7 +2,7 @@
 var assert = require('assert');
 const { expect } = require('chai');
 var request = require("request");
-describe('weatherAPI', function () {
+//describe('weatherAPI', function () {
   describe('getDatafromAPI', function () {
     it('should return 200 response with the value', function () {
       var url = "http://localhost:3000/?city=Vijayawada";
@@ -19,4 +19,4 @@ describe('weatherAPI', function () {
       });
     });
   });
-});
+
